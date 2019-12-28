@@ -59,7 +59,8 @@ SOURCES += main.cpp\
     facepp/FaceSet/FaceSetUpdate.cpp \
     facepp/Utils/CurlPost.cpp \
     facepp/FaceppApi.cpp \
-    facefind_thread.cpp
+    facefind_thread.cpp \
+    facepp/Face/FaceGetDetail.cpp
 
 HEADERS  += mainwidget.h \
     includes.h \
@@ -88,7 +89,8 @@ HEADERS  += mainwidget.h \
     facepp/FaceSet/FaceSetUpdate.hpp \
     facepp/Utils/CurlPost.hpp \
     facepp/FaceppApi.hpp \
-    facefind_thread.h
+    facefind_thread.h \
+    facepp/Face/FaceGetDetail.hpp
 
 FORMS    += mainwidget.ui \
     welcomewidget.ui \

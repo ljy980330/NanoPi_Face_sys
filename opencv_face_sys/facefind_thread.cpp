@@ -113,6 +113,15 @@ bool FaceFind_thread::json_analysis(QString str)
                     {
                         faceSearch.results.face_token.clear();
                     }
+
+                    if(results_object.contains("user_id"))
+                    {
+                        faceSearch.results.user_id = results_object.take("user_id").toString();
+                    }
+                    else
+                    {
+                        faceSearch.results.user_id.clear();
+                    }
                 }
             }
             else
@@ -124,4 +133,3 @@ bool FaceFind_thread::json_analysis(QString str)
     }
     return true;
 }
-

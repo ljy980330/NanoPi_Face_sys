@@ -12,9 +12,6 @@ public:
     ~FaceFind_thread();
 
     QString faceImagePath = "./face.jpg";
-    const char *APIkey = "jnKErmEcRWpMI1UHB2rNZF10AUxss_8-";
-    const char *APIsecre = "1wvLR6qXsPrhQHAwmv3ekjM-JbN8b9hH";
-    const char *FaceSetToken = "ce5a1743232bd1763f0b15772e9ce0e0";
 
     QString apiJsonRet;
     FaceppApi *faceApi;
@@ -22,6 +19,7 @@ public:
     struct FaceSearchData faceSearch;
 
     bool json_analysis(QString str);
+    struct FaceGetDetailResponse FaceGetDetail(QString json_data);
 
 signals:
     void face_search_sig(struct FaceSearchData);

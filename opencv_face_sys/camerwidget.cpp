@@ -21,6 +21,7 @@ CamerWidget::CamerWidget(QWidget *parent) :
     this->resize(800,480);
 
     qRegisterMetaType<FaceSearchData>("FaceSearchData");
+    qRegisterMetaType<FaceGetDetailResponse>("FaceGetDetailResponse");
 
     delay_flag = false;
     findFace_flag = false;
@@ -51,23 +52,23 @@ CamerWidget::CamerWidget(QWidget *parent) :
     facefind_thread = new FaceFind_thread;
     connect(facefind_thread,&FaceFind_thread::face_search_sig,this,&CamerWidget::get_face_search);
 
-    QFile file(faceNamePath);
-    if(file.open(QFile::ReadOnly))
-    {
-        while(!file.atEnd())
-        {
-            QString strLine = file.readLine();
-            if(strLine == "\n")
-                break;
-            strLine.chop(1);
-            faceTokenList.append(strLine.split(" ")[0]);
-            faceNameList.append(strLine.split(" ")[1]);
-        }
-    }
-    else
-    {
-        qDebug() << faceNamePath << " read failed!";
-    }
+//    QFile file(faceNamePath);
+//    if(file.open(QFile::ReadOnly))
+//    {
+//        while(!file.atEnd())
+//        {
+//            QString strLine = file.readLine();
+//            if(strLine == "\n")
+//                break;
+//            strLine.chop(1);
+//            faceTokenList.append(strLine.split(" ")[0]);
+//            faceNameList.append(strLine.split(" ")[1]);
+//        }
+//    }
+//    else
+//    {
+//        qDebug() << faceNamePath << " read failed!";
+//    }
 
     //close时可以进入析构函数
     this->setAttribute(Qt::WA_DeleteOnClose);
@@ -97,108 +98,112 @@ CamerWidget::~CamerWidget()
 
 void CamerWidget::get_face_search(struct FaceSearchData data)
 {
+    int ret;
+    faceSearch = data;
+    double time_s = static_cast<double>((double)faceSearch.time_used / 1000.0);
+
     ui->camer_widget->setFindPic(false);
     faceshow_flag = false;
 
-    faceSearch = data;
-
     if(!faceSearch.error_message.isNull())
     {
-//        QMessageBox::warning(this,"Warning!!!",faceSearch.error_message,QMessageBox::Ok);
-        msgLabel.clear();
-        msgLabel.setText("网络错误\n请检查网络连接");
-        msgLabel.setGeometry(2*(this->width())/6,2*(this->height())/6,2*(this->width())/6,2*(this->height())/6);
-        msgLabel.show();
-        ui->camer_widget->setFindPic(false);
-        delay_timer->setSingleShot(true);
-        delay_timer->start(2000);
-        delay_flag = true;
-        return;
+        ret = NETWORK_ERROR;
+        goto update_ui;
     }
-
-    double time_s = static_cast<double>((double)faceSearch.time_used / 1000.0);
 
     if(faceSearch.results.face_token.isNull())
     {
-        ui->result_info_label->setText(QString("%1识别失败 (%2S)").arg(resultStr).arg(QString::number(time_s,'f',2)));
-        msgLabel.setText("识别失败\n无此人信息,请联系管理员");
-        msgLabel.setGeometry(2*(this->width())/6,2*(this->height())/6,2*(this->width())/6,2*(this->height())/6);
-        msgLabel.show();
-        QProcess::execute(QString("%1 %2").arg(soundFilePath).arg("识别失败,无此人信息,请联系管理员"));
-        delay_timer->setSingleShot(true);
-        delay_timer->start(2000);
-        delay_flag = true;
-        return;
+        ret = FAILED_NOPERSON;
+        goto update_ui;
     }
 
     if(faceSearch.results.confidence > faceSearch.thresholds.thresholds_5)
     {
-        int index = faceTokenList.indexOf(faceSearch.results.face_token);
-        if(index != -1)
-        {
-           QString name = faceNameList[index];
-           name.chop(1);
+       QString name = faceSearch.results.user_id;
 
-           ui->confiden_info_label->setText(QString("%1%2%").arg(confidenStr).arg(QString::number(faceSearch.results.confidence,'f',2)));
-           ui->name_info_label->setText(QString("%1%2").arg(nameStr).arg(name));
-           ui->result_info_label->setText(QString("%1识别成功 (%2S)").arg(resultStr).arg(QString::number(time_s,'f',2)));
-           //QProcess::execute(QString("%1 %2").arg(soundFilePath).arg("识别成功"));
-           QString uartStr = QString("%1,%2").arg(name).arg("欢迎");
-           QProcess::execute(QString("%1 %2").arg(soundFilePath).arg(uartStr));
-           //qDebug() << QString("%1 %2").arg(soundFilePath).arg(uartStr);
+       ui->confiden_info_label->setText(QString("%1%2%").arg(confidenStr).arg(QString::number(faceSearch.results.confidence,'f',2)));
+       ui->name_info_label->setText(QString("%1%2").arg(nameStr).arg(name));
+       ui->result_info_label->setText(QString("%1识别成功 (%2S)").arg(resultStr).arg(QString::number(time_s,'f',2)));
+       //QProcess::execute(QString("%1 %2").arg(soundFilePath).arg("识别成功"));
+       QString uartStr = QString("%1,%2").arg(name).arg("欢迎");
+       QProcess::execute(QString("%1 %2").arg(soundFilePath).arg(uartStr));
 
-           QString filePath = faceFilePath+faceSearch.results.face_token;
-           QFileInfo fileInfo(filePath);
-           if(!fileInfo.isFile())
-           {
-               QFile file(filePath);
-               if(file.open(QFile::WriteOnly))
-               {
-                   file.close();
-               }
-           }
+       QString filePath = faceFilePath+faceSearch.results.face_token;
+       QFileInfo fileInfo(filePath);
+       if(!fileInfo.isFile())
+       {
            QFile file(filePath);
-           if(file.open(QFile::WriteOnly|QFile::Append))
+           if(file.open(QFile::WriteOnly))
            {
-               QDateTime datetime = QDateTime::currentDateTime();
-               QString time_str = datetime.toString("yyyy-MM-dd HH:mm:ss");
-               file.write(time_str.toLatin1());
-               file.write(QString("\n").toLatin1());
                file.close();
-               ui->time_info_label->setText(QString("%1%2").arg(TimeStr).arg(time_str));
-               //qDebug() << "write OK";
            }
-           else
-           {
-               qDebug() << "write failed...." << filePath;
-           }
+       }
+       QFile file(filePath);
+       if(file.open(QFile::WriteOnly|QFile::Append))
+       {
+           QDateTime datetime = QDateTime::currentDateTime();
+           QString time_str = datetime.toString("yyyy-MM-dd HH:mm:ss");
+           file.write(time_str.toLatin1());
+           file.write(QString("\n").toLatin1());
+           file.close();
+           ui->time_info_label->setText(QString("%1%2").arg(TimeStr).arg(time_str));
+           //qDebug() << "write OK";
+       }
+       else
+       {
+           qDebug() << "write failed...." << filePath;
+       }
 
-           delay_timer->setSingleShot(true);
-           delay_timer->start(5000);
-           delay_flag = true;
-        }
-        else
-        {
-            ui->result_info_label->setText(QString("%1识别失败 (%2S)").arg(resultStr).arg(QString::number(time_s,'f',2)));
-            msgLabel.setText("此人不在本地库中\n请联系管理员");
-            msgLabel.setGeometry(2*(this->width())/6,2*(this->height())/6,2*(this->width())/6,2*(this->height())/6);
-            msgLabel.show();
-            QProcess::execute(QString("%1 %2").arg(soundFilePath).arg("此人不在本地库中,请联系管理员"));
-            delay_timer->setSingleShot(true);
-            delay_timer->start(2000);
-            delay_flag = true;
-        }
+       delay_timer->setSingleShot(true);
+       delay_timer->start(5000);
+       delay_flag = true;
+
+       return ;
     }
     else
     {
-        ui->result_info_label->setText(QString("%1识别失败 (%2S)").arg(resultStr).arg(QString::number(time_s,'f',2)));
-        msgLabel.setText("识别失败\n请不要移动");
-        msgLabel.setGeometry(2*(this->width())/6,2*(this->height())/6,2*(this->width())/6,2*(this->height())/6);
-        msgLabel.show();
-        QProcess::execute(QString("%1 %2").arg(soundFilePath).arg("识别失败,请不要移动"));
-        delay_timer->setSingleShot(true);
-        delay_timer->start(2000);
-        delay_flag = true;
+        ret = FAILED_MOVE;
+        goto update_ui;
+    }
+
+update_ui:
+    UpdateUiShow(ret, time_s);
+}
+
+void CamerWidget::UpdateUiShow(int message, double time_s)
+{
+    switch(message)
+    {
+        case NETWORK_ERROR:
+            msgLabel.clear();
+            msgLabel.setText("网络错误\n请检查网络连接");
+            msgLabel.setGeometry(2*(this->width())/6,2*(this->height())/6,2*(this->width())/6,2*(this->height())/6);
+            msgLabel.show();
+            ui->camer_widget->setFindPic(false);
+            delay_timer->setSingleShot(true);
+            delay_timer->start(2000);
+            delay_flag = true;
+            break;
+        case FAILED_NOPERSON:
+            ui->result_info_label->setText(QString("%1识别失败 (%2S)").arg(resultStr).arg(QString::number(time_s,'f',2)));
+            msgLabel.setText("识别失败\n无此人信息,请联系管理员");
+            msgLabel.setGeometry(2*(this->width())/6,2*(this->height())/6,2*(this->width())/6,2*(this->height())/6);
+            msgLabel.show();
+            QProcess::execute(QString("%1 %2").arg(soundFilePath).arg("识别失败,无此人信息,请联系管理员"));
+            delay_timer->setSingleShot(true);
+            delay_timer->start(2000);
+            delay_flag = true;
+            break;
+        case FAILED_MOVE:
+            ui->result_info_label->setText(QString("%1识别失败 (%2S)").arg(resultStr).arg(QString::number(time_s,'f',2)));
+            msgLabel.setText("识别失败\n请不要移动");
+            msgLabel.setGeometry(2*(this->width())/6,2*(this->height())/6,2*(this->width())/6,2*(this->height())/6);
+            msgLabel.show();
+            QProcess::execute(QString("%1 %2").arg(soundFilePath).arg("识别失败,请不要移动"));
+            delay_timer->setSingleShot(true);
+            delay_timer->start(2000);
+            delay_flag = true;
+            break;
     }
 }
 

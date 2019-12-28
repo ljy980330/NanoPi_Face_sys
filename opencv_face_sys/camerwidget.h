@@ -9,6 +9,10 @@ namespace Ui {
 class CamerWidget;
 }
 
+#define NETWORK_ERROR   1
+#define FAILED_NOPERSON 2
+#define FAILED_MOVE     3
+
 class CamerWidget : public QWidget
 {
     Q_OBJECT
@@ -17,7 +21,7 @@ public:
     explicit CamerWidget(QWidget *parent = 0);
     ~CamerWidget();
 
-    QString faceNamePath = "./data/name";
+//    QString faceNamePath = "./data/name";
     QStringList faceTokenList;
     QStringList faceNameList;
 
@@ -70,6 +74,7 @@ protected slots:
     void delay_update();
 
 protected:
+    void UpdateUiShow(int message, double time_s);
     void mousePressEvent(QMouseEvent *event);
 
 signals:

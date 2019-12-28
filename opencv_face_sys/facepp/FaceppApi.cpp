@@ -1,4 +1,4 @@
-ï»¿//
+//
 //  FaceppApi.cpp
 //  FaceppApiLib
 //
@@ -11,7 +11,7 @@
 //#include "Face/FaceCompare.hpp"
 //#include "Face/FaeBeautify.hpp"
 //#include "Face/FaceAnalyze.hpp"
-//#include "Face/FaceGetDetail.hpp"
+#include "Face/FaceGetDetail.hpp"
 //#include "Face/FaceSetUserId.hpp"
 
 #include "FaceSet/FaceSetCreate.hpp"
@@ -58,6 +58,11 @@ FaceppApi::FaceppApi(const char * key, const char * secret){
 std::string FaceppApi::detect(const char *filePath) {
     FaceDetectApi detectApi = FaceDetectApi();
     return detectApi.detect(key, secret, filePath);
+}
+
+std::string FaceppApi::getDetail(const char *face_token) {
+    FaceGetDetailApi detailApi = FaceGetDetailApi();
+    return detailApi.getDetail(key, secret, face_token);
 }
 
 // FaceSet Api ç»?

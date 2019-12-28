@@ -22,6 +22,7 @@ class FaceppApi {
         FaceppApi(const char * key, const char * secret);
         
         std::string detect(const char * filePath);
+        std::string getDetail(const char *face_token);
 
         std::string createFaceset(const char *name);
         std::string addFace(const char *faceset_token, const char* face_tokens);

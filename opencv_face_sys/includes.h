@@ -191,10 +191,24 @@ struct FaceSearchData
     QString error_message;
 };
 
-#define VIDEO_NAME_INIT "/dev/video0";
+struct FaceGetDetailResponse
+{
+    QString request_id;
+    QString image_id;
+    QString face_token;
+    QString user_id;
+    int time_used;
+    QString error_message;
+};
+
+#define VIDEO_NAME_INIT "/dev/video0"
 #define VIDEO_WIDTH_INIT 640
 #define VIDEO_HEIGH_INIT 480
 #define VIDEO_SETFILE "./data/opencv_set"
+
+#define APIkey "jnKErmEcRWpMI1UHB2rNZF10AUxss_8-"
+#define APIsecre "1wvLR6qXsPrhQHAwmv3ekjM-JbN8b9hH"
+#define FaceSetToken "ce5a1743232bd1763f0b15772e9ce0e0"
 
 #define LOAD_FILE_PATH "./image/load2.gif"
 
